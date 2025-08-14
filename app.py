@@ -99,7 +99,7 @@ def main():
         st.error("Não foi possível carregar os componentes necessários")
         return
 
-    user_input = st.text_area("Digite sua avaliação:", "O produto é excelente, recomendo muito!")
+    user_input = st.text_area("Digite sua avaliação:")
     
     if st.button("Analisar Sentimento"):
         if not user_input.strip():
@@ -135,4 +135,5 @@ def main():
             st.error(f"Erro na análise: {str(e)}")
 
 if __name__ == "__main__":
+
     main()
