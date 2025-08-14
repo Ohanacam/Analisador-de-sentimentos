@@ -33,7 +33,7 @@ Utilizamos o dataset [Brazilian Portuguese Sentiment Analysis Datasets](https://
 ## 🚀 Teste o Modelo
 
 Acesse a implementação em produção no Streamlit:  
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.com/seu-usuario/sentiment-analysis-app/main/app.py)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://8upsnenvqmdixxebskwap6.streamlit.app/)
 
 **⚠️ Atenção**: Apesar da boa acurácia (88%), o modelo pode:
 
