@@ -30,5 +30,4 @@ streamlit run app.py
 - Recall: 85%
 - F1-score: 87%
 
-## 📝 Licença
-MIT
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/seu-usuario/sentiment-analysis-app/main/app.py)
