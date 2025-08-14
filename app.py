@@ -44,46 +44,43 @@ def preprocess_text(text):
         st.error(f"Erro no pré-processamento: {str(e)}")
         return ""
 
-# Carregamento seguro do vetorizador com verificação
+# Carregamento seguro dos componentes
 @st.cache_resource
-def load_vectorizer():
+def load_components():
     try:
-        # Tenta carregar com joblib
-        vectorizer = joblib.load('vectorizer_thirdanalysis_new.pkl')
+        # Caminhos consistentes (usando raw strings ou barras normais)
+        model_path = os.path.join('models', 'thirdanalysis_new_model.pkl')
+        vectorizer_path = os.path.join('models', 'vectorizer_thirdanalysis_new.pkl')
         
-        # Verifica se o vetorizador está fitted
-        if not hasattr(vectorizer, 'vocabulary_'):
-            st.error("Vetorizador não foi treinado corretamente")
-            return None
+        # Verifica se os arquivos existem
+        if not os.path.exists(model_path) or not os.path.exists(vectorizer_path):
+            st.error("Arquivos do modelo não encontrados na pasta 'models'")
+            return None, None
             
-        return vectorizer
-    except:
+        # Carrega primeiro o vetorizador
         try:
-            # Fallback para pickle
-            with open('vectorizer_thirdanalysis_new.pkl', 'rb') as f:
+            vectorizer = joblib.load(vectorizer_path)
+        except:
+            with open(vectorizer_path, 'rb') as f:
                 vectorizer = pickle.load(f)
                 
-            if not hasattr(vectorizer, 'vocabulary_'):
-                st.error("Vetorizador não foi treinado corretamente")
-                return None
-                
-            return vectorizer
-        except Exception as e:
-            st.error(f"Erro ao carregar vetorizador: {str(e)}")
-            return None
-
-# Carregamento seguro do modelo
-@st.cache_resource
-def load_model():
-    try:
-        return joblib.load('thirdanalysis_new_model.pkl')
-    except:
+        # Verifica o vetorizador
+        if not hasattr(vectorizer, 'vocabulary_'):
+            st.error("Vetorizador não foi treinado corretamente")
+            return None, None
+            
+        # Carrega o modelo
         try:
-            with open('thirdanalysis_new_model.pkl', 'rb') as f:
-                return pickle.load(f)
-        except Exception as e:
-            st.error(f"Erro ao carregar modelo: {str(e)}")
-            return None
+            model = joblib.load(model_path)
+        except:
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+                
+        return model, vectorizer
+        
+    except Exception as e:
+        st.error(f"Erro crítico ao carregar componentes: {str(e)}")
+        return None, None
 
 # Interface principal
 def main():
@@ -92,48 +89,52 @@ def main():
     st.write("Digite uma avaliação em português para análise de sentimento")
 
     # Carrega os componentes
-    vectorizer = load_vectorizer()
-    model = load_model()
+    model, vectorizer = load_components()
     
-    if vectorizer is None or model is None:
+    if model is None or vectorizer is None:
         st.error("Não foi possível carregar os componentes necessários")
-        return
+        st.stop()  # Encerra o app completamente
 
-    user_input = st.text_area("Digite sua avaliação:")
+    user_input = st.text_area("Digite sua avaliação:", help="Escreva uma avaliação em português sobre um produto ou serviço")
     
-    if st.button("Analisar Sentimento"):
+    if st.button("Analisar Sentimento", type="primary"):
         if not user_input.strip():
             st.warning("Por favor, digite uma avaliação.")
             return
             
-        processed_text = preprocess_text(user_input)
-        
-        try:
-            # Verificação final do vetorizador
-            if not hasattr(vectorizer, 'transform'):
-                st.error("Vetorizador não está pronto para transformação")
-                return
+        with st.spinner('Analisando...'):
+            processed_text = preprocess_text(user_input)
+            
+            try:
+                text_vector = vectorizer.transform([processed_text])
+                prediction = model.predict(text_vector)
+                proba = model.predict_proba(text_vector)[0]
                 
-            text_vector = vectorizer.transform([processed_text])
-            prediction = model.predict(text_vector)
-            proba = model.predict_proba(text_vector)[0]
-            
-            st.subheader("Resultado:")
-            if prediction[0] == 1:
-                st.success(f"✅ Positivo ({(proba[1]*100):.1f}% de confiança)")
-            else:
-                st.error(f"❌ Negativo ({(proba[0]*100):.1f}% de confiança)")
-            
-            # Visualização
-            prob_data = pd.DataFrame({
-                'Sentimento': ['Positivo', 'Negativo'],
-                'Probabilidade': [proba[1], proba[0]]
-            })
-            st.bar_chart(prob_data.set_index('Sentimento'))
-            
-        except Exception as e:
-            st.error(f"Erro na análise: {str(e)}")
+                # Resultado
+                st.subheader("Resultado:")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if prediction[0] == 1:
+                        st.success("✅ Positivo")
+                    else:
+                        st.error("❌ Negativo")
+                
+                with col2:
+                    st.metric("Confiança", 
+                              f"{max(proba)*100:.1f}%",
+                              delta=f"{max(proba)*100 - 50:.1f}%")
+                
+                # Gráfico
+                prob_data = pd.DataFrame({
+                    'Sentimento': ['Negativo', 'Positivo'],
+                    'Probabilidade': proba
+                })
+                st.bar_chart(prob_data.set_index('Sentimento'))
+                
+            except Exception as e:
+                st.error(f"Erro na análise: {str(e)}")
+                st.exception(e)  # Mostra detalhes do erro para debug
 
 if __name__ == "__main__":
-
     main()
