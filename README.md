@@ -1,5 +1,4 @@
 # 📱 Analisador de Sentimentos para Avaliações de Apps em Português
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://seu-app.streamlit.app)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 
 ## 📌 Introdução
